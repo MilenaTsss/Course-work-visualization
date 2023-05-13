@@ -1,0 +1,79 @@
+body {
+    font: 100% Verdana, Arial, Helvetica, sans-serif;
+    background: whitesmoke;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    color: black;
+}
+
+#mainContent {
+    background: white;
+}
+
+#header {
+    background: #bca1d3;
+    color: #553c9a;
+    padding: 0 10px 0 20px;
+}
+
+#algoControlSection {
+    background: whitesmoke;
+    color: #553c9a;
+}
+
+td {
+    padding: 10px 10px 10px 5px;
+}
+
+#generalAnimationControlSection {
+    background: aliceblue;
+    color: #553c9a;
+}
+
+#header A:visited {
+    text-decoration: none;
+    color: #bca1d3;
+}
+
+#header h1 {
+    margin: 0;
+    padding: 10px 0;
+}
+
+#mainContent h1 {
+    padding: 0 20px;
+    background: white;
+    color: #553c9a
+}
+
+#mainContent h3 {
+    padding: 0 20px;
+    background: white;
+    color: #553c9a
+}
+
+#mainContent h2 {
+    padding: 0 20px;
+    background: white;
+    color: #553c9a
+}
+
+canvas {
+    border: 3px solid #553c9a;
+    background: lavenderblush;
+}
+
+button {
+    border: 1px solid #bca1d3;
+    color: #553c9a;
+    background: lavenderblush;
+    font-size: large;
+}
+
+input {
+    border: 1px solid #bca1d3;
+    color: #553c9a;
+    font-size: large;
+    background: lavenderblush;
+}

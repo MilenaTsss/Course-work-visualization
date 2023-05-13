@@ -1,0 +1,11 @@
+{
+  "name": "visualization",
+  "version": "1.0",
+  "description": "Visualization for red black and b trees",
+  "main": "main.js",
+  "author": "Tsarakhova Milena",
+  "license": "No licence",
+  "dependencies": {
+    "animejs": "^3.2.1"
+  }
+}
