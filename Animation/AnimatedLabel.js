@@ -1,6 +1,6 @@
 class AnimatedLabel extends AnimatedObject {
     constructor(label) {
-        super(70,height - 30,  label);
+        super(200,height - 30,  label);
     }
 
     draw() {
@@ -10,4 +10,9 @@ class AnimatedLabel extends AnimatedObject {
         context.fillStyle = this.labelColor;
         context.fillText(this.label, this.centerX, this.centerY);
     }
+}
+
+function setStatus(label) {
+    status.label = label;
+    redrawAll();
 }

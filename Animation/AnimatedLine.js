@@ -4,6 +4,11 @@ class AnimatedLine extends AnimatedObject {
     beginY;
     endY;
 
+    moveBeginX = null;
+    moveBeginY = null;
+    moveEndX = null;
+    moveEndY = null;
+
 
     constructor(x1, y1, x2, y2) {
         super();
@@ -26,100 +31,45 @@ class AnimatedLine extends AnimatedObject {
         this.#drawLine();
     }
 
-    move(toX, toY) {
-        if (this.endX === toX && this.endY === toY) {
+    move() {
+        if (this.beginX === this.moveBeginX && this.beginY === this.moveBeginY
+            && this.endX === this.moveEndX && this.endY === this.moveEndY) {
+            this.isMoving = false;
             redrawAll();
             cancelAnimationFrame(this.move);
             return;
         }
 
         requestAnimationFrame(() => {
-            this.move(toX, toY);
+            this.move();
         });
 
-        if (toX !== this.endX) {
-            if (Math.abs(toX - this.endX) < SPEED) {
-                this.endX = toX;
+        if (this.moveBeginX != null && this.moveBeginX !== this.beginX) {
+            if (Math.abs(this.moveBeginX - this.beginX) < SPEED) {
+                this.beginX = this.moveBeginX;
             }
-            this.endX += Math.sign(toX - this.endX) * SPEED;
+            this.beginX += Math.sign(this.moveBeginX - this.beginX) * SPEED;
         }
 
-        if (toY !== this.endY) {
-            if (Math.abs(toY - this.endY) < SPEED) {
-                this.endY = toY;
+        if (this.moveBeginY != null && this.moveBeginY !== this.beginY) {
+            if (Math.abs(this.moveBeginY - this.beginY) < SPEED) {
+                this.beginY = this.moveBeginY;
             }
-            this.endY += Math.sign(toY - this.endY) * SPEED;
+            this.beginY += Math.sign(this.moveBeginY - this.beginY) * SPEED;
         }
 
-        redrawAll();
-    }
-
-    moveHead(toX, toY) {
-        if (this.beginX === toX && this.beginY === toY) {
-            redrawAll();
-            cancelAnimationFrame(this.moveHead);
-            return;
-        }
-
-        requestAnimationFrame(() => {
-            this.moveHead(toX, toY);
-        });
-
-        if (toX !== this.beginX) {
-            if (Math.abs(toX - this.beginX) < SPEED) {
-                this.beginX = toX;
+        if (this.moveEndX != null && this.moveEndX !== this.endX) {
+            if (Math.abs(this.moveEndX - this.endX) < SPEED) {
+                this.endX = this.moveEndX;
             }
-            this.beginX += Math.sign(toX - this.beginX) * SPEED;
+            this.endX += Math.sign(this.moveEndX - this.endX) * SPEED;
         }
 
-        if (toY !== this.beginY) {
-            if (Math.abs(toY - this.beginY) < SPEED) {
-                this.beginY = toY;
+        if (this.moveEndX != null && this.moveEndY !== this.endY) {
+            if (Math.abs(this.moveEndY - this.endY) < SPEED) {
+                this.endY = this.moveEndY;
             }
-            this.beginY += Math.sign(toY - this.beginY) * SPEED;
-        }
-
-        redrawAll();
-    }
-
-    moveAll(beginToX, beginToY, endToX, endToY) {
-        if (this.beginX === beginToX && this.beginY === beginToY
-            && this.endX === endToX && this.endY === endToY) {
-            redrawAll();
-            cancelAnimationFrame(this.moveHead);
-            return;
-        }
-
-        requestAnimationFrame(() => {
-            this.moveAll(beginToX, beginToY, endToX, endToY);
-        });
-
-        if (beginToX !== this.beginX) {
-            if (Math.abs(beginToX - this.beginX) < SPEED) {
-                this.beginX = beginToX;
-            }
-            this.beginX += Math.sign(beginToX - this.beginX) * SPEED;
-        }
-
-        if (beginToY !== this.beginY) {
-            if (Math.abs(beginToY - this.beginY) < SPEED) {
-                this.beginY = beginToY;
-            }
-            this.beginY += Math.sign(beginToY - this.beginY) * SPEED;
-        }
-
-        if (endToX !== this.endX) {
-            if (Math.abs(endToX - this.endX) < SPEED) {
-                this.endX = endToX;
-            }
-            this.endX += Math.sign(endToX - this.endX) * SPEED;
-        }
-
-        if (endToY !== this.endY) {
-            if (Math.abs(endToY - this.endY) < SPEED) {
-                this.endY = endToY;
-            }
-            this.endY += Math.sign(endToY - this.endY) * SPEED;
+            this.endY += Math.sign(this.moveEndY - this.endY) * SPEED;
         }
 
         redrawAll();

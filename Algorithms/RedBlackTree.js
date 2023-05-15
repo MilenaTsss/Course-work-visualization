@@ -45,217 +45,14 @@ class RedBlackTree {
         clear();
     }
 
-    #replaceParentsChild(parent, oldChild, newChild) {
-        if (parent == null) {
-            this.root = newChild;
-        } else if (parent.left === oldChild) {
-            parent.left = newChild;
-        } else if (parent.right === oldChild) {
-            parent.right = newChild;
-        } else {
-            throw "Node is not a child of its parent";
-        }
-
-        if (newChild != null) {
-            newChild.parent = parent;
-        }
-    }
-
-    #moveDown(node, direction = 1) {
-        if (node == null) {
-            return;
-        }
-
-        const finalX = node.graphic.centerX + DISTANCE / Math.pow(COEFFICIENT, node.level + 1) * direction;
-        const finalY = node.graphic.centerY + DISTANCE / Math.pow(COEFFICIENT, node.level + 1);
-        /*if (node.edgeGraphic != null) {
-            node.edgeGraphic.moveHead(node.parent.graphic.centerX, node.parent.graphic.centerY);
-            await delay(400);
-        }*/
-
-        node.move(finalX, finalY);
-        return [finalX, finalY];
-    }
-
-    async #moveUp(node, direction = 1) {
-        if (node == null) {
-            return;
-        }
-
-        const finalX = node.parent.graphic.centerX + DISTANCE / Math.pow(COEFFICIENT, node.level + 1) * direction;
-        const finalY = node.parent.graphic.centerY + DISTANCE / Math.pow(COEFFICIENT, node.level + 1);
-        if (node.edgeGraphic != null) {
-            node.edgeGraphic.moveHead(node.parent.graphic.centerX, node.parent.graphic.centerY);
-            await delay(400);
-        }
-        node.move(finalX, finalY);
-        return [finalX, finalY];
-    }
-
-    async #moveAllUp(node) {
-        console.log("up");
-        if (node != null) {
-            console.log("up" + node);
-            await this.#moveUp(node.left, -1);
-            await this.#moveUp(node.right, 1);
-            await delay(700);
-            await this.#moveAllUp(node.left);
-            await this.#moveAllUp(node.right);
-        }
-    }
-
-    async #moveAllDown(node, direction = 1) {
-        if (node != null) {
-            if (node.left != null) {
-                await this.#moveAllDown(node.left, -1);
-            }
-            if (node.right != null) {
-                await this.#moveAllDown(node.right, 1);
-            }
-            this.#moveDown(node, direction);
-        }
-    }
-
-    async #moveRotateRight(node, parent, left, right) {
-        node.deleteEdge();
-        left.deleteEdge();
-
-        if (right != null) {
-            right.deleteEdge();
-        }
-
-        const oldLeftX = left.graphic.centerX;
-        const oldLeftY = left.graphic.centerY;
-
-        left.parent = parent;
-        this.#replaceParentsChild(parent, node, left)
-        left.setEdge();
-        left.move(node.graphic.centerX, node.graphic.centerY);
-
-        if (left.left != null) {
-            this.#checkGraphicMove(left, node.graphic.centerX, node.graphic.centerY, () => {
-                left.left.edgeGraphic.moveAll(left.graphic.centerX, left.graphic.centerY, oldLeftX, oldLeftY)
-
-                //left.left.edgeGraphic.moveHead(left.graphic.centerX, left.graphic.centerY);
-                //left.left.edgeGraphic.move(oldLeftX, oldLeftY);
-                left.left.move(oldLeftX, oldLeftY);
-            })
-
-            this.#checkGraphicMove(left.left, oldLeftX, oldLeftY, async () => {
-                redrawAll();
-                await this.#moveAllUp(left.left);
-            })
-        }
-
-
-        await this.#moveAllDown(node.right);
-        const finalCoordinatesNode = this.#moveDown(node);
-        this.#checkGraphicMove(node, finalCoordinatesNode[0], finalCoordinatesNode[1], () => {
-            node.left = right;
-            if (right != null) {
-                right.parent = node;
-                this.#moveNode(right, () => {
-                });
-            }
-
-            node.parent = left;
-            left.right = node;
-            node.setEdge();
-        })
-    }
-
-    async #rotateRight(node) {
-        const parent = node.parent;
-        const left = node.left;
-        console.log(node, parent, left, left.right);
-
-        await this.#moveRotateRight(node, parent, left, left.right);
-
-        /*node.left = left.right;
-        if (left.right != null) {
-            left.right.parent = node;
-        }
-
-        left.right = node;
-        node.parent = left;
-
-        this.replaceParentsChild(parent, node, left);*/
-    }
-
-    async #moveRotateLeft(node, parent, right, left) {
-        node.deleteEdge();
-        right.deleteEdge();
-
-        if (left != null) {
-            left.deleteEdge();
-        }
-
-        const oldRightX = right.graphic.centerX;
-        const oldRightY = right.graphic.centerY;
-
-        right.parent = parent;
-        this.#replaceParentsChild(parent, node, right);
-        right.setEdge();
-        right.move(node.graphic.centerX, node.graphic.centerY);
-
-        if (right.right != null) {
-            this.#checkGraphicMove(right, node.graphic.centerX, node.graphic.centerY, () => {
-                right.right.edgeGraphic.moveAll(right.graphic.centerX, right.graphic.centerY, oldRightX, oldRightY)
-
-                //left.left.edgeGraphic.moveHead(left.graphic.centerX, left.graphic.centerY);
-                //left.left.edgeGraphic.move(oldLeftX, oldLeftY);
-                right.right.move(oldRightX, oldRightY);
-            })
-
-            this.#checkGraphicMove(right.right, oldRightX, oldRightY, async () => {
-                redrawAll();
-                await this.#moveAllUp(right.right);
-            })
-        }
-
-
-        await this.#moveAllDown(node.left, -1);
-        const finalCoordinatesNode = this.#moveDown(node, -1);
-        this.#checkGraphicMove(node, finalCoordinatesNode[0], finalCoordinatesNode[1], () => {
-            node.right = left;
-            if (left != null) {
-                left.parent = node;
-                this.#moveNode(left, () => {
-                });
-            }
-
-            node.parent = right;
-            right.left = node;
-            node.setEdge();
-        })
-    }
-
-    async #rotateLeft(node) {
-        const parent = node.parent;
-        const right = node.right;
-        console.log(node, parent, right, right.left);
-
-        await this.#moveRotateLeft(node, parent, right, right.left);
-
-        /*node.right = right.left;
-        if (right.left != null) {
-            right.left.parent = node;
-        }
-
-        right.left = node;
-        node.parent = right;
-
-        this.#replaceParentsChild(parent, node, right);*/
-    }
-
     async #searchNode(key) {
         let node = this.root;
         while (node != null) {
-            status.label = "Node: " + node.data;
+            setStatus("Node: " + node.data);
             node.drawHighlighted();
 
             if (key === node.data) {
-                status.label = key + " found";
+                setStatus(key + " found");
                 await delay(400);
                 node.clearHighlight();
                 return node;
@@ -269,47 +66,9 @@ class RedBlackTree {
                 node = node.right;
             }
         }
-        status.label = key + " not found";
-        redrawAll()
 
+        setStatus(key + " not found");
         return null;
-    }
-
-    #checkGraphicMove(newNode, toX, toY, final) {
-        if (newNode.graphic.centerX !== toX || newNode.graphic.centerY !== toY) {
-            window.setTimeout(
-                () => {
-                    this.#checkGraphicMove(newNode, toX, toY, final)
-                },
-                200);
-        } else {
-            final();
-        }
-    }
-
-    #moveNode(newNode, final) {
-        if (newNode.parent == null) {
-            newNode.move(RBTreeStartCoordinates[0], RBTreeStartCoordinates[1]);
-            this.#checkGraphicMove(newNode, RBTreeStartCoordinates[0], RBTreeStartCoordinates[1], final)
-            return;
-        }
-
-        let direction = -1;
-        if (newNode.data < newNode.parent.data) {
-            newNode.parent.left = newNode;
-        } else {
-            newNode.parent.right = newNode;
-            newNode.graphic.centerX = 800;
-            newNode.graphic.centerY = 400;
-            direction = 1;
-        }
-
-        newNode.setEdge();
-        const finalX = newNode.parent.graphic.centerX + DISTANCE / Math.pow(COEFFICIENT, newNode.level) * direction;
-        const finalY = newNode.parent.graphic.centerY + DISTANCE / Math.pow(COEFFICIENT, newNode.level);
-
-        newNode.move(finalX, finalY);
-        this.#checkGraphicMove(newNode, finalX, finalY, final);
     }
 
     async insertNode(key) {
@@ -318,22 +77,18 @@ class RedBlackTree {
 
         while (node != null) {
             parent = node;
-            //status.label = "Node: " + node.data;
             node.drawHighlighted();
             if (key < node.data) {
-                //status.label = "Node: " + node.data;
                 await delay(400);
                 node.clearHighlight();
                 node = node.left;
             } else if (key > node.data) {
-                //status.label = "Node: " + node.data;
                 await delay(400);
                 node.clearHighlight();
                 node = node.right;
             } else {
                 node.clearHighlight();
-                status.label = "Node already exists";
-                await delay(400);
+                setStatus("Node already exists");
                 return;
             }
         }
@@ -341,17 +96,101 @@ class RedBlackTree {
         let newNode = new RedBlackNode(key, RED);
 
         if (parent == null) {
+            setStatus("Inserting root");
             this.root = newNode;
-            this.#moveNode(newNode, () => {
-                this.#fixRedBlackPropertiesAfterInsert(newNode);
-            });
+            newNode.move();
         } else {
+            setStatus("Inserting after " + parent.data);
+
             newNode.level = parent.level + 1;
             newNode.parent = parent;
-            this.#moveNode(newNode, () => {
-                this.#fixRedBlackPropertiesAfterInsert(newNode);
-            });
+
+            if (newNode.parent.data < newNode.data) {
+                newNode.graphic.centerX = 800;
+                newNode.graphic.centerY = 800;
+                parent.right = newNode;
+            } else {
+                parent.left = newNode;
+            }
+
+            newNode.move();
         }
+
+        await moveAll(1000);
+        await delay(500);
+        await this.#fixRedBlackPropertiesAfterInsert(newNode);
+    }
+
+    #replaceParentsChild(parent, oldChild, newChild) {
+        if (parent == null) {
+            this.root = newChild;
+        } else if (parent.left === oldChild) {
+            parent.left = newChild;
+        } else if (parent.right === oldChild) {
+            parent.right = newChild;
+        } else {
+            setStatus("ERROR, Node is not child to parent");
+            throw "Node is not a child of its parent";
+        }
+
+        if (newChild != null) {
+            newChild.parent = parent;
+        }
+    }
+
+    traverse(node, level) {
+        if (node == null) {
+            return;
+        }
+        node.level = level;
+        node.move();
+        this.traverse(node.left, level + 1);
+        this.traverse(node.right, level + 1);
+    }
+
+    async #rotateRight(node) {
+        setStatus("Rotating right " + node.data);
+
+        const parent = node.parent;
+        const left = node.left;
+
+        node.left = left.right;
+        if (left.right != null) {
+            left.right.parent = node;
+        }
+
+        left.right = node;
+        node.parent = left;
+
+        this.#replaceParentsChild(parent, node, left);
+
+        await delay(1000);
+
+        this.traverse(this.root, 0);
+
+        await moveAll(2000);
+    }
+
+    async #rotateLeft(node) {
+        setStatus("Rotating left " + node.data);
+        const parent = node.parent;
+        const right = node.right;
+
+        node.right = right.left;
+        if (right.left != null) {
+            right.left.parent = node;
+        }
+
+        right.left = node;
+        node.parent = right;
+
+        this.#replaceParentsChild(parent, node, right);
+
+        await delay(1000);
+
+        this.traverse(this.root, 0);
+
+        await moveAll(2000);
     }
 
     #getUncle(parent) {
@@ -361,12 +200,23 @@ class RedBlackTree {
         } else if (grandparent.right === parent) {
             return grandparent.left;
         } else {
+            setStatus("ERROR, parent isn't a child to grandparent");
             throw "Parent is not a child of its grandparent";
         }
     }
 
+    async #findMinimum(node) {
+        while (node.left != null) {
+            node.drawHighlighted();
+            await delay(200);
+            node = node.left;
+        }
+        node.clearHighlight();
+        return node;
+    }
+
     async #fixRedBlackPropertiesAfterInsert(node) {
-        console.log(node.data);
+        setStatus("Fixing after insert with node " + node.data);
         let parent = node.parent;
 
         // Case 1: Parent is null, we've reached the root, the end of the recursion
@@ -412,7 +262,6 @@ class RedBlackTree {
         else if (parent === grandparent.left) {
             // Case 4a: Uncle is black and node is left->right "inner child" of its grandparent
             if (node === parent.right) {
-                console.log("rotate left");
                 await this.#rotateLeft(parent);
 
                 // Let "parent" point to the new root node of the rotated subtree.
@@ -421,12 +270,10 @@ class RedBlackTree {
             }
 
             // Case 5a: Uncle is black and node is left->left "outer child" of its grandparent
-            console.log("rotate right");
             await this.#rotateRight(grandparent);
 
 
             // Recolor original parent and grandparent
-
             parent.setColor(BLACK);
             grandparent.setColor(RED);
         }
@@ -435,7 +282,6 @@ class RedBlackTree {
         else {
             // Case 4b: Uncle is black and node is right->left "inner child" of its grandparent
             if (node === parent.left) {
-                console.log("rotate right", parent);
                 await this.#rotateRight(parent);
 
                 // Let "parent" point to the new root node of the rotated sub-tree.
@@ -444,8 +290,6 @@ class RedBlackTree {
             }
 
             // Case 5b: Uncle is black and node is right->right "outer child" of its grandparent
-
-            console.log("rotate left")
             await this.#rotateLeft(grandparent);
 
             // Recolor original parent and grandparent
@@ -454,51 +298,32 @@ class RedBlackTree {
         }
     }
 
-    #findMinimum(node) {
-        while (node.left != null) {
-            node = node.left;
-        }
-        return node;
-    }
-
-    #deleteNodeWithZeroOrOneChild(node) {
-        // Node has ONLY a left child -> replace by its left child
-        if (node.left != null) {
-            this.#replaceParentsChild(node.parent, node, node.left);
-            return node.left; // moved-up node
-        }
-        // Node has ONLY a right child -> replace by its right child
-        else if (node.right != null) {
-            this.#replaceParentsChild(node.parent, node, node.right);
-            return node.right; // moved-up node
-        }
-            // Node has no children ->
-            // * node is red --> just remove it
-        // * node is black -> replace it by a temporary NIL node (needed to fix the R-B rules)
-        else {
-            let newChild = node.color === BLACK ? new RedBlackNode(0, true) : null;
-            this.#replaceParentsChild(node.parent, node, newChild);
-            return newChild;
-        }
-    }
-
     async #deleteNode(key) {
+        setStatus("Deleting " + key);
         let node = this.root;
 
         // Find the node to be deleted
         while (node != null && node.data !== key) {
+            node.drawHighlighted();
             // Traverse the tree to the left or right depending on the key
             if (key < node.data) {
+                await delay(400);
+                node.clearHighlight();
                 node = node.left;
             } else {
+                await delay(400);
+                node.clearHighlight();
                 node = node.right;
             }
         }
 
         // Node not found?
         if (node == null) {
+            setStatus(key + " not found")
             return;
         }
+
+        setStatus(key + " found");
 
         // At this point, "node" is the node to be deleted
         // In this variable, we'll store the node at which we're going to start to fix the R-B
@@ -535,6 +360,38 @@ class RedBlackTree {
         }
     }
 
+    async #deleteNodeWithZeroOrOneChild(node) {
+        node.graphic.isVisible = false;
+        if (node.edgeGraphic != null) {
+            node.edgeGraphic.isVisible = false;
+        }
+
+        if (node === this.root) {
+            return null;
+        }
+
+        // Node has ONLY a left child -> replace by its left child
+        if (node.left != null) {
+            this.#replaceParentsChild(node.parent, node, node.left);
+            return node.left; // moved-up node
+        }
+        // Node has ONLY a right child -> replace by its right child
+        else if (node.right != null) {
+            this.#replaceParentsChild(node.parent, node, node.right);
+            //this.#replaceParentsChild(node.parent, node, node.right);
+            return node.right; // moved-up node
+        }
+            // Node has no children ->
+            // * node is red --> just remove it
+        // * node is black -> replace it by a temporary NIL node (needed to fix the R-B rules)
+        else {
+            let newChild = node.color === BLACK ? new RedBlackNode(0, true) : null;
+            this.#replaceParentsChild(node.parent, node, newChild)
+            //this.#replaceParentsChild(node.parent, node, newChild);
+            return newChild;
+        }
+    }
+
     #getSibling(node) {
         const parent = node.parent;
         if (node === parent.left) {
@@ -553,9 +410,10 @@ class RedBlackTree {
     async #fixRedBlackPropertiesAfterDelete(node) {
         // Case 1: Examined node is root, end of recursion
         if (node === this.root) {
-            node.color = BLACK;
+            node.setColor(BLACK);
             return;
         }
+
         let sibling = this.#getSibling(node);
 
         // Case 2: Red sibling
@@ -566,11 +424,11 @@ class RedBlackTree {
 
         // Cases 3+4: Black sibling with two black children
         if (this.#isBlack(sibling.left) && this.#isBlack(sibling.right)) {
-            sibling.color = RED;
+            sibling.setColor(RED);
 
             // Case 3: Black sibling with two black children + red parent
             if (node.parent.color === RED) {
-                node.parent.color = BLACK;
+                node.parent.setColor(BLACK);
             }
 
             // Case 4: Black sibling with two black children + black parent
@@ -586,8 +444,8 @@ class RedBlackTree {
 
     async #handleRedSibling(node, sibling) {
         // Recolor
-        sibling.color = BLACK;
-        node.parent.color = RED;
+        sibling.setColor(BLACK);
+        node.parent.setColor(RED);
 
         // Rotate
         if (node === node.parent.left) {
@@ -603,13 +461,13 @@ class RedBlackTree {
         // Case 5: Black sibling with at least one red child + "outer nephew" is black
         // --> Recolor sibling and its child, and rotate around sibling
         if (nodeIsLeftChild && this.#isBlack(sibling.right)) {
-            sibling.left.color = BLACK;
-            sibling.color = RED;
+            sibling.left.setColor(BLACK);
+            sibling.setColor(RED);
             await this.#rotateRight(sibling);
             sibling = node.parent.right;
         } else if (!nodeIsLeftChild && this.#isBlack(sibling.left)) {
-            sibling.right.color = BLACK;
-            sibling.color = RED;
+            sibling.right.setColor(BLACK);
+            sibling.setColor(RED);
             await this.#rotateLeft(sibling);
             sibling = node.parent.left;
         }
@@ -617,13 +475,13 @@ class RedBlackTree {
 
         // Case 6: Black sibling with at least one red child + "outer nephew" is red
         // --> Recolor sibling + parent + sibling's child, and rotate around parent
-        sibling.color = node.parent.color;
-        node.parent.color = BLACK;
+        sibling.setColor(node.parent.color)
+        node.parent.setColor(BLACK);
         if (nodeIsLeftChild) {
-            sibling.right.color = BLACK;
+            sibling.right.setColor(BLACK);
             await this.#rotateLeft(node.parent);
         } else {
-            sibling.left.color = BLACK;
+            sibling.left.setColor(BLACK);
             await this.#rotateRight(node.parent);
         }
     }
@@ -651,20 +509,6 @@ class RedBlackNode {
         drawable_objects.push(this.graphic);
     }
 
-    setEdge() {
-        if (this.parent != null) {
-            if (this.edgeGraphic != null) {
-                this.edgeGraphic.isVisible = false;
-            }
-
-            const head = this.parent.getAttachPoint(this.graphic.centerX, this.graphic.centerY);
-            const tail = this.getAttachPoint(this.parent.graphic.centerX, this.parent.graphic.centerY);
-            this.edgeGraphic = new AnimatedLine(head[0], head[1], tail[0], tail[1]);
-            drawable_objects.push(this.edgeGraphic);
-            redrawAll();
-        }
-    }
-
     deleteEdge() {
         if (this.edgeGraphic != null) {
             this.edgeGraphic.clear();
@@ -673,6 +517,12 @@ class RedBlackNode {
     }
 
     setColor(newColor) {
+        let colorText = "black";
+        if (newColor === RED) {
+            colorText = "red";
+        }
+        setStatus("Recolor " + this.data + " to " + colorText);
+
         this.color = newColor;
         this.graphic.setColor(newColor);
         redrawAll();
@@ -690,16 +540,44 @@ class RedBlackNode {
         this.graphic.clearHighlight();
     }
 
-    move(toX, toY) {
-        this.graphic.move(toX, toY);
-        if (this.edgeGraphic != null) {
-            const newTail =
-                getAttachPoint(this.edgeGraphic.beginX, this.edgeGraphic.beginY, toX, toY)
-            this.edgeGraphic.move(newTail[0], newTail[1]);
-        }
-    }
+    move() {
+        if (this.parent == null) {
+            this.deleteEdge();
 
-    getAttachPoint(fromX, fromY) {
-        return this.graphic.getAttachPoint(fromX, fromY);
+            this.graphic.isMoving = true;
+            this.graphic.movingToX = RBTreeStartCoordinates[0];
+            this.graphic.movingToY = RBTreeStartCoordinates[1];
+        } else {
+            let parentX = this.parent.graphic.centerX;
+            let parentY = this.parent.graphic.centerY;
+
+            if (this.parent.graphic.isMoving) {
+                parentX = this.parent.graphic.movingToX;
+                parentY = this.parent.graphic.movingToY;
+            }
+
+            let direction = 1;
+            if (this.data < this.parent.data) {
+                direction = -1;
+            }
+
+            this.graphic.isMoving = true;
+            this.graphic.movingToX = parentX + DISTANCE / Math.pow(COEFFICIENT, this.level) * direction;
+            this.graphic.movingToY = parentY + DISTANCE / Math.pow(COEFFICIENT, this.level);
+
+            const head = getAttachPoint(this.graphic.movingToX, this.graphic.movingToY, parentX, parentY);
+            const tail = getAttachPoint(parentX, parentY, this.graphic.movingToX, this.graphic.movingToY);
+
+            if (this.edgeGraphic != null) {
+                this.edgeGraphic.isMoving = true;
+                this.edgeGraphic.moveBeginX = head[0];
+                this.edgeGraphic.moveBeginY = head[1];
+                this.edgeGraphic.moveEndX = tail[0];
+                this.edgeGraphic.moveEndY = tail[1];
+            } else {
+                this.edgeGraphic = new AnimatedLine(head[0], head[1], tail[0], tail[1]);
+                drawable_objects.push(this.edgeGraphic);
+            }
+        }
     }
 }

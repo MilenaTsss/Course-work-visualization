@@ -52,19 +52,28 @@ function enableAllButtons() {
     clearButton.disabled = false;
 }
 
-/*
-function startAnimation() {
+async function moveAll(time = 1000) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
-}
-
-function waiting(objectManager) {
-    insertButton.disabled = true;
-    findButton.disabled = true;
-    deleteButton.disabled = true;
-    objectManager.stepForwardButton.disabled = false;
-    if (skipBackButton.disabled === false) {
-        stepBackButton.disabled = false;
+    for (let i = 0; i < drawable_objects.length; ++i) {
+        if (drawable_objects[i].isVisible && !drawable_objects[i].isOnTop) {
+            if (drawable_objects[i].isMoving) {
+                drawable_objects[i].move(this.movingToX, this.movingToY);
+            } else {
+                drawable_objects[i].draw();
+            }
+        }
     }
-    objectManager.statusReport.setText("Animation Paused");
-    objectManager.statusReport.setForegroundColor("#FF0000");
-}*/
+
+    for (let i = 0; i < drawable_objects.length; ++i) {
+        if (drawable_objects[i].isVisible && drawable_objects[i].isOnTop) {
+            if (drawable_objects[i].isMoving) {
+                drawable_objects[i].move(this.movingToX, this.movingToY);
+            } else {
+                drawable_objects[i].draw();
+            }
+        }
+    }
+
+    await delay(time);
+}

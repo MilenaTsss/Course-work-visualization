@@ -1,10 +1,13 @@
-const SPEED = 5;
+let SPEED = 10;
 const STROKE_WIDTH = 1;
 const HIGHLIGHT_WIDTH = 3;
 
 class AnimatedObject {
     centerX = 0;
     centerY = 0;
+    isMoving = false;
+    movingToX = null;
+    movingToY = null;
     label = "";
     isVisible = true;
     isOnTop = false;
@@ -50,8 +53,13 @@ class AnimatedObject {
         redrawAll();
     }
 
-    move(toX, toY) {
-        if (this.centerX === toX && this.centerY === toY) {
+    move() {
+        if (!this.isMoving) {
+            return;
+        }
+
+        if (this.centerX === this.movingToX && this.centerY === this.movingToY) {
+            this.isMoving = false;
             this.highlighted = false;
             redrawAll();
             cancelAnimationFrame(this.move);
@@ -60,23 +68,23 @@ class AnimatedObject {
 
 
         requestAnimationFrame(() => {
-            this.move(toX, toY);
+            this.move();
         });
 
         this.highlighted = true;
 
-        if (toX !== this.centerX) {
-            if (Math.abs(toX - this.centerX) < SPEED) {
-                this.centerX = toX;
+        if (this.movingToX !== this.centerX) {
+            if (Math.abs(this.movingToX - this.centerX) < SPEED) {
+                this.centerX = this.movingToX;
             }
-            this.centerX += Math.sign(toX - this.centerX) * SPEED;
+            this.centerX += Math.sign(this.movingToX - this.centerX) * SPEED;
         }
 
-        if (toY !== this.centerY) {
-            if (Math.abs(toY - this.centerY) < SPEED) {
-                this.centerY = toY;
+        if (this.movingToY !== this.centerY) {
+            if (Math.abs(this.movingToY - this.centerY) < SPEED) {
+                this.centerY = this.movingToY;
             }
-            this.centerY += Math.sign(toY - this.centerY) * SPEED;
+            this.centerY += Math.sign(this.movingToY - this.centerY) * SPEED;
         }
 
         redrawAll();
@@ -85,5 +93,13 @@ class AnimatedObject {
     clear() {
         this.isVisible = false;
         redrawAll();
+    }
+}
+
+function setSpeed() {
+    let value = parseInt(speedField.value);
+    if (!isNaN(value) && value >= 1 && value <= 20) {
+        speedField.value = "";
+        SPEED = value;
     }
 }

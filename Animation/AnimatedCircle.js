@@ -40,19 +40,6 @@ class AnimatedCircle extends AnimatedObject {
         this.#drawCircle();
         this.drawLabel();
     }
-
-    getAttachPoint(fromX, fromY) {
-        const xVec = fromX - this.centerX;
-        const yVec = fromY - this.centerY;
-        const len = Math.sqrt(xVec * xVec + yVec * yVec);
-        if (len === 0) {
-            return [this.centerX, this.centerY];
-        }
-
-        return [this.centerX + (xVec / len) * RADIUS,
-            this.centerY + (yVec / len) * RADIUS];
-    }
-
 }
 
 function getAttachPoint(fromX, fromY, toX, toY) {
