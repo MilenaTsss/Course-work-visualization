@@ -206,9 +206,11 @@ class RedBlackTree {
     }
 
     async #findMinimum(node) {
+        node.drawHighlighted();
+        await delay(400);
         while (node.left != null) {
             node.drawHighlighted();
-            await delay(200);
+            await delay(400);
             node = node.left;
         }
         node.clearHighlight();
@@ -325,7 +327,7 @@ class RedBlackTree {
 
         setStatus(key + " found");
 
-        // At this point, "node" is the node to be deleted
+        // "node" is the node to be deleted
         // In this variable, we'll store the node at which we're going to start to fix the R-B
         // properties after deleting a node.
 
@@ -334,60 +336,64 @@ class RedBlackTree {
 
         // Node has zero or one child
         if (node.left == null || node.right == null) {
+            setStatus("Deleting node with one child or without children")
             movedUpNode = this.#deleteNodeWithZeroOrOneChild(node);
             deletedNodeColor = node.color;
         } else {
+            setStatus("Finding minimum from node.right")
             // Node has two children
 
             // Find minimum node of right subtree ("inorder successor" of current node)
-            let inOrderSuccessor = this.#findMinimum(node.right);
+            let inOrderSuccessor = await this.#findMinimum(node.right);
 
             // Copy inorder successor's data to current node (keep its color!)
-            node.data = inOrderSuccessor.data;
+            node.setData(inOrderSuccessor.data);
 
             // Delete inorder successor just as we would delete a node with 0 or 1 child
             movedUpNode = this.#deleteNodeWithZeroOrOneChild(inOrderSuccessor);
             deletedNodeColor = inOrderSuccessor.color;
         }
 
+        this.traverse(this.root, 0);
+        await moveAll(1000);
+
         if (deletedNodeColor === BLACK) {
             await this.#fixRedBlackPropertiesAfterDelete(movedUpNode);
 
             // Remove the temporary NIL node
             if (movedUpNode.isNil === true) {
+                movedUpNode.isVisible = false;
+                movedUpNode.deleteEdge();
                 this.#replaceParentsChild(movedUpNode.parent, movedUpNode, null);
             }
         }
+
+        await this.traverse(this.root, 0);
+        await moveAll(1000);
+
+        redrawAll();
     }
 
-    async #deleteNodeWithZeroOrOneChild(node) {
+    #deleteNodeWithZeroOrOneChild(node) {
         node.graphic.isVisible = false;
-        if (node.edgeGraphic != null) {
-            node.edgeGraphic.isVisible = false;
-        }
-
-        if (node === this.root) {
-            return null;
-        }
+        node.deleteEdge();
 
         // Node has ONLY a left child -> replace by its left child
         if (node.left != null) {
             this.#replaceParentsChild(node.parent, node, node.left);
-            return node.left; // moved-up node
-        }
-        // Node has ONLY a right child -> replace by its right child
-        else if (node.right != null) {
+            return node.left;
+        } else if (node.right != null) {
+            // Node has ONLY a right child -> replace by its right child
+
             this.#replaceParentsChild(node.parent, node, node.right);
-            //this.#replaceParentsChild(node.parent, node, node.right);
-            return node.right; // moved-up node
-        }
+            return node.right;
+        } else {
             // Node has no children ->
             // * node is red --> just remove it
-        // * node is black -> replace it by a temporary NIL node (needed to fix the R-B rules)
-        else {
-            let newChild = node.color === BLACK ? new RedBlackNode(0, true) : null;
-            this.#replaceParentsChild(node.parent, node, newChild)
-            //this.#replaceParentsChild(node.parent, node, newChild);
+            // * node is black -> replace it by a temporary NIL node (needed to fix the R-B rules)
+
+            let newChild = node.color === BLACK ? new RedBlackNode("nil", BLACK, true) : null;
+            this.#replaceParentsChild(node.parent, node, newChild);
             return newChild;
         }
     }
@@ -408,8 +414,11 @@ class RedBlackTree {
     }
 
     async #fixRedBlackPropertiesAfterDelete(node) {
+        console.log(node);
+        setStatus("Fixing after delete with " + node.data);
         // Case 1: Examined node is root, end of recursion
         if (node === this.root) {
+            console.log("root");
             node.setColor(BLACK);
             return;
         }
@@ -506,6 +515,9 @@ class RedBlackNode {
 
         this.graphic = new AnimatedCircle(40, 400, this.data);
         this.graphic.setColor(color);
+        if (nil === true) {
+            this.graphic.isVisible = false;
+        }
         drawable_objects.push(this.graphic);
     }
 
@@ -528,6 +540,11 @@ class RedBlackNode {
         redrawAll();
     }
 
+    setData(data) {
+        this.data = data;
+        this.graphic.label = data;
+    }
+
     draw() {
         redrawAll();
     }
@@ -541,6 +558,10 @@ class RedBlackNode {
     }
 
     move() {
+        if (this.graphic.isVisible === false) {
+            return;
+        }
+
         if (this.parent == null) {
             this.deleteEdge();
 

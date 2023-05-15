@@ -1,10 +1,5 @@
 let drawable_objects = []
 
-let rbNodes = []
-let rbEdges = []
-let bNodes = []
-let bEdges = []
-
 function redrawAll() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < drawable_objects.length; ++i) {
@@ -21,20 +16,8 @@ function redrawAll() {
     status.draw();
 }
 
-function addCircle(circle) {
-    if (circle != null) {
-        drawable_objects.push(circle);
-        rbNodes.push(circle);
-    }
-    redrawAll();
-}
-
 function clear() {
     drawable_objects = []
-    rbNodes = []
-    rbEdges = []
-    bNodes = []
-    bEdges = []
     redrawAll();
 }
 
