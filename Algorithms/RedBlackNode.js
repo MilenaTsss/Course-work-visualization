@@ -31,6 +31,10 @@ class RedBlackNode {
     }
 
     setColor(newColor) {
+        if (newColor === this.color) {
+            return;
+        }
+
         let colorText = "black";
         if (newColor === RED) {
             colorText = "red";

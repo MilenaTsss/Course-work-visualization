@@ -86,17 +86,18 @@ class BTreeNode {
 
         if (child != null) {
             child.index = index;
+            child.parent = this;
         }
     }
 
-    getKey(index) {
+    getNode(index) {
         switch (index) {
             case 0:
-                return this.leftNode.key;
+                return this.leftNode;
             case 1:
-                return this.middleNode.key;
+                return this.middleNode;
             case 2:
-                return this.rightNode.key;
+                return this.rightNode;
         }
 
         return null;
@@ -109,13 +110,26 @@ class BTreeNode {
     }
 
     getKeyIndex(key) {
-        if (key === this.leftNode.key) {
+        if (this.leftNode != null && key === this.leftNode.key) {
             return 0;
-        } else if (key === this.middleNode.key) {
+        } else if (this.middleNode != null && key === this.middleNode.key) {
             return 1;
-        } else if (key === this.rightNode.key) {
+        } else if (this.rightNode != null && key === this.rightNode.key) {
             return 2;
         }
+
+        return -1;
+    }
+
+    getNodeIndex(node) {
+        if (this.leftNode === node) {
+            return 0;
+        } else if (this.middleNode === node) {
+            return 1;
+        } else if (this.rightNode === node) {
+            return 2;
+        }
+
         return -1;
     }
 
@@ -131,18 +145,31 @@ class BTreeNode {
     setKey(key, index) {
         switch (index) {
             case 0:
-                this.left.setKey(key);
+                this.leftNode.setKey(key);
                 break;
             case 1:
-                this.middleLeft.setKey(key);
+                this.middleNode.setKey(key);
                 break;
             case 2:
-                this.middleRight.setKey(key);
-                break;
-            case 3:
-                this.right.setKey(key);
+                this.rightNode.setKey(key);
                 break;
         }
+    }
+
+    setNode(node, index) {
+        console.log("setting node");
+        switch (index) {
+            case 0:
+                this.leftNode = node;
+                break;
+            case 1:
+                this.middleNode = node;
+                break;
+            case 2:
+                this.rightNode = node;
+                break;
+        }
+        node.bNode = this;
     }
 
     insertKey(key) {
@@ -153,7 +180,7 @@ class BTreeNode {
         } else if (this.middleNode == null || key < this.middleNode.key) {
             this.rightNode = this.middleNode;
             this.middleNode = new Node(key, 1, this);
-        } else  {
+        } else {
             this.rightNode = new Node(key, 2, this);
         }
     }
@@ -170,20 +197,20 @@ class BTreeNode {
         return this.right;
     }
 
-
-    // Appends 1 key and 1 child to this node.
-    // Preconditions:
-    // 1. This node has 1 or 2 keys
-    // 2. key > all keys in this node
-    // 3. Child subtree contains only keys > key
-    appendKeyAndChild(key, child) {
+    appendNodeWithChild(node, child) {
         if (this.middleNode == null) {
-            this.middleNode = new Node(key, 1);
+            this.middleNode = node;
             this.middleRight = child;
         } else {
-            this.rightNode = new Node(key, 2);
+            this.rightNode = node;
             this.right = child;
         }
+
+        if (child != null) {
+            child.parent = this;
+        }
+
+        node.bNode = this;
     }
 
     // Inserts a new key into the proper location in this node, and
@@ -198,7 +225,7 @@ class BTreeNode {
         } else if (this.middleNode == null || node.key < this.middleNode.key) {
             this.rightNode = this.middleNode;
             this.middleNode = node;
-        } else  {
+        } else {
             this.rightNode = node;
         }
     }
@@ -272,17 +299,142 @@ class BTreeNode {
         return this.left == null;
     }
 
-    deleteNode() {
-        if (this.leftNode != null) {
-            this.leftNode.graphic.isVisible = false;
+    removeKey(index) {
+        switch (index) {
+            case 0: {
+                this.leftNode.delete();
+                this.leftNode = this.middleNode;
+                this.middleNode = this.rightNode;
+                this.rightNode = null;
+                this.left = this.middleLeft;
+                this.middleLeft = this.middleRight;
+                this.middleRight = this.right;
+                if (this.right != null) {
+                    this.right.clear();
+                }
+                this.right = null;
+                break;
+            }
+
+            case 1: {
+                this.middleNode.delete();
+                this.middleNode = this.rightNode;
+                this.rightNode = null;
+
+                this.middleRight = this.right;
+                if (this.right != null) {
+                    this.right.clear();
+                }
+                this.right = null;
+                break;
+            }
+            case 2: {
+                this.rightNode.delete();
+                this.rightNode = null;
+                if (this.right != null) {
+                    this.right.clear();
+                }
+                this.right = null;
+            }
+        }
+    }
+
+    simpleRemoveNode(index) {
+        switch (index) {
+            case 0: {
+                this.leftNode = this.middleNode;
+                this.middleNode = this.rightNode;
+                this.rightNode = null;
+
+                this.left = this.middleLeft;
+                this.middleLeft = this.middleRight;
+                this.middleRight = this.right;
+                this.right = null;
+                break;
+            }
+
+            case 1: {
+                this.middleNode = this.rightNode;
+                this.rightNode = null;
+
+                this.middleRight = this.right;
+                this.right = null;
+                break;
+            }
+            case 2: {
+                this.rightNode = null;
+                this.right = null;
+            }
+        }
+    }
+
+    removeRightmostChild() {
+        let removed = null;
+        if (this.right != null) {
+            removed = this.right;
+            this.right = null;
+        } else if (this.middleRight != null) {
+            removed = this.middleRight;
+            this.middleRight = null;
         }
 
+        return removed;
+    }
+
+    // Removes and returns the rightmost key. Three possible cases exist:
+    // 1. If this node has 3 keys, C is set to null and
+    //    the previous C value is returned.
+    // 2. If this node has 2 keys, B is set to null and
+    //    the previous B value is returned.
+    // 3. Otherwise no action is taken and null is returned.
+    // No children are changed in any case.
+    removeRightmostNode() {
+        let removed = null;
+        if (this.rightNode != null) {
+            removed = this.rightNode;
+            this.rightNode = null;
+        }
+        else if (this.middleNode != null) {
+            removed = this.middleNode;
+            this.middleNode = null;
+        }
+        return removed;
+    }
+
+    delete() {
+        if (this.leftNode != null) {
+            this.leftNode.delete();
+        }
         if (this.middleNode != null) {
-            this.middleNode.graphic.isVisible = false;
+            this.middleNode.delete();
         }
 
         if (this.rightNode != null) {
-            this.rightNode.graphic.isVisible = false;
+            this.rightNode.delete();
+        }
+    }
+
+    drawHighlighted() {
+        if (this.leftNode != null) {
+            this.leftNode.drawHighlighted();
+        }
+        if (this.middleNode != null) {
+            this.middleNode.drawHighlighted();
+        }
+        if (this.rightNode != null) {
+            this.rightNode.drawHighlighted();
+        }
+    }
+
+    clearHighlight() {
+        if (this.leftNode != null) {
+            this.leftNode.clearHighlight();
+        }
+        if (this.middleNode != null) {
+            this.middleNode.clearHighlight();
+        }
+        if (this.rightNode != null) {
+            this.rightNode.clearHighlight();
         }
     }
 
@@ -327,6 +479,10 @@ class Node {
     }
 
     setColor(newColor) {
+        if (newColor === this.color) {
+            return;
+        }
+
         let colorText = "black";
         if (newColor === RED) {
             colorText = "red";
@@ -354,6 +510,7 @@ class Node {
 
     move() {
         const parent = this.bNode.parent;
+        console.log(this, parent);
 
         if (parent == null) {
             this.graphic.isMoving = true;
@@ -409,6 +566,16 @@ class Node {
         if (this.edgeGraphic != null) {
             this.edgeGraphic.clear();
             this.edgeGraphic = null;
+        }
+    }
+
+    delete() {
+        if (this.graphic != null) {
+            this.graphic.clear();
+        }
+
+        if (this.edgeGraphic != null) {
+            this.edgeGraphic.clear();
         }
     }
 

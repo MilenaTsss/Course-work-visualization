@@ -14,6 +14,32 @@ class BTree {
         this.traverse(node.right, level + 1);
     }
 
+    async recolorTree(node) {
+        if (node == null) {
+            return;
+        }
+
+        if (node.leftNode != null) {
+            const newColor = await redBlackTree.searchNode(node.leftNode.key, false);
+            node.leftNode.setColor(newColor.color);
+        }
+
+        if (node.middleNode != null) {
+            const newColor = await redBlackTree.searchNode(node.middleNode.key, false);
+            node.middleNode.setColor(newColor.color);
+        }
+
+        if (node.rightNode != null) {
+            const newColor = await redBlackTree.searchNode(node.rightNode.key, false);
+            node.rightNode.setColor(newColor.color);
+        }
+
+        await this.recolorTree(node.left);
+        await this.recolorTree(node.middleLeft);
+        await this.recolorTree(node.middleRight);
+        await this.recolorTree(node.right);
+    }
+
     async insertNode(key, node, nodeParent) {
         setStatus("Inserting " + key);
 
@@ -21,7 +47,7 @@ class BTree {
             this.root = new BTreeNode(key);
             this.root.move();
             await moveAll();
-            await this.recolorTree(this.root);
+            //await this.recolorTree(this.root);
 
             return this.root;
         }
@@ -51,8 +77,8 @@ class BTree {
         node.insertKey(key);
 
         this.traverse(this.root, 0);
-        await moveAll(1500);
-        await this.recolorTree(this.root);
+        await moveAll();
+        //await this.recolorTree(this.root);
 
         return node;
     }
@@ -60,8 +86,6 @@ class BTree {
     split(node, nodeParent) {
         const splitLeft = new BTreeNode(node.leftNode, node.left, node.middleLeft, nodeParent);
         const splitRight = new BTreeNode(node.rightNode, node.middleRight, node.right, nodeParent);
-
-        console.log(node.leftNode, node.middleNode, node.rightNode);
 
         if (nodeParent != null) {
             nodeParent.insertKeyWithChildren(node.middleNode, splitLeft, splitRight);
@@ -74,18 +98,85 @@ class BTree {
     }
 
     // Recursive helper method for search.
-    searchNode(key, node) {
+    async searchNode(key, node) {
         if (node == null) {
             return null;
         }
 
+        node.drawHighlighted();
+
         // Check if the node contains the key
         if (node.containsKey(key)) {
+            setStatus(key + " found");
+            await delay(400);
+            node.clearHighlight();
             return node;
         }
 
+        await delay(400);
+        node.clearHighlight();
+
         // Recursively search the appropriate subtree
         return this.searchNode(key, node.nextNode(key));
+    }
+
+    // Finds and removes the specified key from this tree.
+    async deleteNode(key) {
+        // Special case for tree with 1 key
+        if (this.root.isLeaf() && this.root.countKeys() === 1) {
+            if (this.root.leftNode.key === key) {
+                this.root.delete();
+                setStatus("Deleted root " + key);
+                this.root = null;
+                return true;
+            }
+            setStatus(key + " not found");
+            return false;
+        }
+
+        let currentParent = null;
+        let current = this.root;
+
+        while (current != null) {
+            // Merge any non-root node with 1 key
+            if (current.countKeys() === 1 && current !== this.root) {
+                current = await this.merge(current, currentParent);
+            }
+
+            // Check if current node contains key
+            const keyIndex = current.getKeyIndex(key);
+            if (keyIndex !== -1) {
+                if (current.isLeaf()) {
+                    current.removeKey(keyIndex);
+
+                    this.traverse(this.root, 0);
+                    await moveAll();
+                    //await this.recolorTree(this.root);
+
+                    return true;
+                }
+
+                // The node contains the key and is not a leaf, so the key is
+                // replaced with the successor
+                const tmpChild = current.getChild(keyIndex + 1);
+                const tmpKey = this.getMinKey(tmpChild);
+                await this.deleteNode(tmpKey);
+                this.keySwap(this.root, key, tmpKey);
+
+                this.traverse(this.root, 0);
+                await moveAll();
+                //await this.recolorTree(this.root);
+
+                return true;
+            }
+
+            // Current node does not contain key, so continue down tree
+            currentParent = current;
+            current = current.nextNode(key);
+        }
+
+        setStatus(key + " not found");
+        return false;
     }
 
     // Splits a full node, moving the middle key up into the parent node.
@@ -98,15 +189,16 @@ class BTree {
         }
 
         const leftNodeIndex = parent.getChildIndex(leftNode);
-        const middleKey = parent.getKey(leftNodeIndex);
-        const fusedNode = new (leftNode.A);
-        fusedNode.B = middleKey;
-        fusedNode.C = rightNode.A;
+        const middleNode = parent.getNode(leftNodeIndex);
+        const fusedNode = new BTreeNode(leftNode.leftNode);
+
+        fusedNode.middleNode = middleNode;
+        fusedNode.rightNode = rightNode.leftNode;
         fusedNode.left = leftNode.left;
-        fusedNode.middle1 = leftNode.middle1;
-        fusedNode.middle2 = rightNode.left;
-        fusedNode.right = rightNode.middle1;
-        const keyIndex = parent.getKeyIndex(middleKey);
+        fusedNode.middleLeft = leftNode.middleLeft;
+        fusedNode.middleRight = rightNode.left;
+        fusedNode.right = rightNode.middleLeft;
+        const keyIndex = parent.getNodeIndex(middleNode);
         parent.removeKey(keyIndex);
         parent.setChild(fusedNode, keyIndex);
         return fusedNode;
@@ -116,27 +208,19 @@ class BTree {
     // Precondition: Each of the three nodes must have one key each.
     fuseRoot() {
         const oldLeft = this.root.left;
-        const oldMiddle1 = this.root.middle1;
-        this.root.B = this.root.A;
-        this.root.A = oldLeft.A;
-        this.root.C = oldMiddle1.A;
+        const oldMiddleLeft = this.root.middleLeft;
+
+        this.root.middleNode = this.root.leftNode;
+        this.root.leftNode = oldLeft.leftNode;
+        oldLeft.leftNode.bNode = this.root;
+        this.root.rightNode = oldMiddleLeft.leftNode;
+        oldMiddleLeft.leftNode.bNode = this.root;
+
         this.root.left = oldLeft.left;
-        this.root.middle1 = oldLeft.middle1;
-        this.root.middle2 = oldMiddle1.left;
-        this.root.right = oldMiddle1.middle1;
+        this.root.middleLeft = oldLeft.middleLeft;
+        this.root.middleRight = oldMiddleLeft.left;
+        this.root.right = oldMiddleLeft.middleLeft;
         return this.root;
-    }
-
-    #getHeight(node) {
-        if (node.left == null) {
-            return 0;
-        }
-        return 1 + this.#getHeight(node.left);
-    }
-
-    // Returns the height of this tree.
-    getHeight() {
-        return this.#getHeight(this.root);
     }
 
     // Searches for, and returns, the minimum key in a subtree
@@ -166,40 +250,20 @@ class BTree {
         return true;
     }
 
-    // Returns the number of keys in this tree.
-    length() {
-        let count = 0;
-        const nodes = []
-        nodes.push(this.root);
-
-        while (!nodes.length) {
-            const node = nodes.pop();
-            if (node != null) {
-                // Add the number of keys in the node to the count
-                count = count + node.countKeys();
-
-                // Push children
-                nodes.push(node.left);
-                nodes.push(node.middle1);
-                nodes.push(node.middle2);
-                nodes.push(node.right);
-            }
-        }
-        return count;
-    }
-
     // Rotates or fuses to add 1 or 2 additional keys to a node with 1 key.
-    merge(node, nodeParent) {
-        // Get references to node's siblings
+    async merge(node, nodeParent) {
+        setStatus("Merging");
+
         const nodeIndex = nodeParent.getChildIndex(node);
         const leftSibling = nodeParent.getChild(nodeIndex - 1);
         const rightSibling = nodeParent.getChild(nodeIndex + 1);
 
-        // Check siblings for a key that can be transferred
         if (leftSibling != null && leftSibling.countKeys() >= 2) {
-            this.rotateRight(leftSibling, nodeParent);
+            setStatus("Rotate right");
+            await this.rotateRight(leftSibling, nodeParent);
         } else if (rightSibling != null && rightSibling.countKeys() >= 2) {
-            this.rotateLeft(rightSibling, nodeParent);
+            setStatus("Rotate right");
+            await this.rotateLeft(rightSibling, nodeParent);
         } else {
             if (leftSibling == null) {
                 node = this.fuse(nodeParent, node, rightSibling);
@@ -211,115 +275,53 @@ class BTree {
         return node;
     }
 
-    // Finds and removes the specified key from this tree.
-    deleteNode(key) {
-        // Special case for tree with 1 key
-        if (this.root.isLeaf() && this.root.countKeys() === 1) {
-            if (this.root.A === key) {
-                this.root = null;
-                return true;
-            }
-            return false;
-        }
+    async rotateLeft(node, nodeParent) {
+        const nodeIndex = nodeParent.getChildIndex(node);
+        const leftSibling = nodeParent.getChild(nodeIndex - 1); // node
 
-        let currentParent = null;
-        let current = this.root;
-        while (current != null) {
-            // Merge any non-root node with 1 key
-            if (current.countKeys() === 1 && current !== this.root) {
-                current = this.merge(current, currentParent);
-            }
+        const nodeForLeftSibling = nodeParent.getNode(nodeIndex - 1); // node
 
-            // Check if current node contains key
-            const keyIndex = current.getKeyIndex(key);
-            if (keyIndex !== -1) {
-                if (current.isLeaf()) {
-                    current.removeKey(keyIndex);
-                    return true;
-                }
+        leftSibling.appendNodeWithChild(nodeForLeftSibling, node.left);
 
-                // The node contains the key and is not a leaf, so the key is
-                // replaced with the successor
-                const tmpChild = current.getChild(keyIndex + 1);
-                const tmpKey = this.getMinKey(tmpChild);
-                this.remove(tmpKey);
-                this.keySwap(this.root, key, tmpKey);
-                return true;
-            }
+        nodeParent.setNode(node.leftNode, nodeIndex - 1);
 
-            // Current node does not contain key, so continue down tree
-            currentParent = current;
-            current = current.nextNode(key);
-        }
+        node.simpleRemoveNode(0);
 
-        // key not found
-        return false;
+        this.traverse(this.root, 0);
+        await moveAll();
+        await delay(500);
     }
 
-    rotateLeft(node, nodeParent) {
-        // Get the node's left sibling
+    async rotateRight(node, nodeParent) {
         const nodeIndex = nodeParent.getChildIndex(node);
-        const leftSibling = nodeParent.getChild(nodeIndex - 1);
-
-        // Get key from the parent that will be copied into the left sibling
-        const keyForLeftSibling = nodeParent.getKey(nodeIndex - 1);
-
-        // Append the key to the left sibling
-        leftSibling.appendKeyAndChild(keyForLeftSibling, node.left);
-
-        // Replace the parent's key that was appended to the left sibling
-        nodeParent.setKey(node.A, nodeIndex - 1);
-
-        // Remove key A and left child from node
-        node.removeKey(0);
-    }
-
-    rotateRight(node, nodeParent) {
-        // Get the node's right sibling
-        const nodeIndex = nodeParent.getChildIndex(node);
-        const rightSibling = nodeParent.getChild(nodeIndex + 1);
+        const rightSibling = nodeParent.getChild(nodeIndex + 1); // node
 
         // Get key from the parent that will be copied into the right sibling
-        const keyForRightSibling = nodeParent.getKey(nodeIndex);
+        const nodeForRightSibling = nodeParent.getNode(nodeIndex);
+
 
         // Shift key and child references in right sibling
-        rightSibling.C = rightSibling.B;
-        rightSibling.B = rightSibling.A;
-        rightSibling.right = rightSibling.middle2;
-        rightSibling.middle2 = rightSibling.middle1;
-        rightSibling.middle1 = rightSibling.left;
+        rightSibling.rightNode = rightSibling.middleNode;
+        rightSibling.middleNode = rightSibling.leftNode;
+        rightSibling.right = rightSibling.middleRight;
+        rightSibling.middleRight = rightSibling.middleLeft;
+        rightSibling.middleLeft = rightSibling.left;
 
         // Set key A and the left child of rightSibling
-        rightSibling.A = keyForRightSibling;
-        rightSibling.left = node.removeRightmostChild();
+        rightSibling.leftNode = nodeForRightSibling;
+        nodeForRightSibling.bNode = rightSibling;
+        const removedChild = node.removeRightmostChild()
+        rightSibling.left = removedChild;
+        if (removedChild != null) {
+            removedChild.parent = rightSibling;
+        }
 
         // Replace the parent's key that was prepended to the right sibling
-        nodeParent.setKey(node.removeRightmostKey(), nodeIndex);
-    }
+        //nodeParent.setKey(node.removeRightmostKey(), nodeIndex);
+        nodeParent.setNode(node.removeRightmostNode(), nodeIndex);
 
-    async recolorTree(node) {
-        if (node == null) {
-            return;
-        }
-
-        if (node.leftNode != null) {
-            const newColor = await redBlackTree.searchNode(node.leftNode.key, false);
-            node.leftNode.setColor(newColor.color);
-        }
-
-        if (node.middleNode != null) {
-            const newColor = await redBlackTree.searchNode(node.middleNode.key, false);
-            node.middleNode.setColor(newColor.color);
-        }
-
-        if (node.rightNode != null) {
-            const newColor = await redBlackTree.searchNode(node.rightNode.key, false);
-            node.rightNode.setColor(newColor.color);
-        }
-
-        await this.recolorTree(node.left);
-        await this.recolorTree(node.middleLeft);
-        await this.recolorTree(node.middleRight);
-        await this.recolorTree(node.right);
+        this.traverse(this.root, 0);
+        await moveAll();
+        await delay(500);
     }
 }
