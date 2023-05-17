@@ -16,7 +16,7 @@ function redrawAll() {
     status.draw();
 }
 
-function clear() {
+function clearAll() {
     drawable_objects = []
     redrawAll();
 }

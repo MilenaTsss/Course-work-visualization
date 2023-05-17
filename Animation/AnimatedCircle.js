@@ -22,18 +22,6 @@ class AnimatedCircle extends AnimatedObject {
         context.stroke();
     }
 
-    setColor(color = BLACK) {
-        if (color === BLACK ) {
-            this.labelColor = DEFAULT_LABEL_COLOR;
-            this.foregroundColor = DEFAULT_FOREGROUND_COLOR;
-            this.backgroundColor = GREY;
-        } else {
-            this.labelColor = DARK_RED;
-            this.foregroundColor = RED;
-            this.backgroundColor = PINK;
-        }
-    }
-
     draw() {
         this.#drawHighlight();
         this.setStyle();

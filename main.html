@@ -4,6 +4,7 @@
     <title>Red Black Tree and BST Visualization</title>
     <link rel="stylesheet" href="mainStyle.css">
 
+    <script type="text/javascript" src="Algorithms/RedBlackNode.js"></script>
     <script type="text/javascript" src="Algorithms/RedBlackTree.js"></script>
     <script type="text/javascript" src="Algorithms/BNode.js"></script>
     <script type="text/javascript" src="Algorithms/BTree.js"></script>
@@ -34,12 +35,12 @@
             <table id="AlgorithmSpecificControls">
                 <tr>
                     <td><label for="insert"></label><input type="number" id="insert" placeholder="number"></td>
-                    <td><button id="insertButton" onclick="redBlackTree.insert()">insert</button></td>
+                    <td><button id="insertButton" onclick="Insert()">insert</button></td>
                     <td><label for="delete"></label><input type="number" id="delete" placeholder="number"></td>
-                    <td><button id="deleteButton" onclick="redBlackTree.delete()">delete</button></td>
+                    <td><button id="deleteButton" onclick="Delete()">delete</button></td>
                     <td><label for="find"></label><input type="number" id="find" placeholder="number"></td>
-                    <td><button id="findButton" onclick="redBlackTree.find()">find</button></td>
-                    <td><button id="clearButton" onclick="redBlackTree.clear()">clear</button></td>
+                    <td><button id="findButton" onclick="Find()">find</button></td>
+                    <td><button id="clearButton" onclick="Clear()">clear</button></td>
                     <td><label for="speed"></label><input type="number" id="speed" placeholder="from 1 to 20"></td>
                     <td><button id="speedButton" onclick="setSpeed()">set speed</button></td>
                 </tr>

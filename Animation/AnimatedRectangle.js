@@ -1,5 +1,5 @@
-const RECTANGLE_WIDTH = 50;
-const RECTANGLE_HEIGHT = 25;
+const RECTANGLE_WIDTH = 30;
+const RECTANGLE_HEIGHT = 20;
 
 class AnimatedRectangle extends AnimatedObject {
     isOnTop = true;

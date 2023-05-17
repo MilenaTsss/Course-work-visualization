@@ -30,7 +30,7 @@ class AnimatedObject {
 
     drawLabel() {
         context.textAlign = 'center';
-        context.font = '8px sans-serif';
+        context.font = '12px sans-serif';
         context.textBaseline = 'middle';
         context.lineWidth = STROKE_WIDTH;
         context.fillStyle = this.labelColor;
@@ -88,6 +88,18 @@ class AnimatedObject {
         }
 
         redrawAll();
+    }
+
+    setColor(color = BLACK) {
+        if (color === BLACK ) {
+            this.labelColor = DEFAULT_LABEL_COLOR;
+            this.foregroundColor = DEFAULT_FOREGROUND_COLOR;
+            this.backgroundColor = GREY;
+        } else {
+            this.labelColor = DARK_RED;
+            this.foregroundColor = RED;
+            this.backgroundColor = PINK;
+        }
     }
 
     clear() {

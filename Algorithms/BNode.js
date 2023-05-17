@@ -1,20 +1,173 @@
-class BNode {
-    a;
-    b;
-    c;
-    left = null;
-    right = null;
-    middle1 = null;
-    middle2 = null;
+class BTreeNode {
+    leftNode = null;
+    middleNode = null;
+    rightNode = null;
 
-    constructor(keyA = null, keyB = null, keyC = null, left = null, middle1 = null, middle2 = null, right = null) {
-        this.a = keyA;
-        this.b = keyB;
-        this.c = keyC;
+    parent = null;
+    index = null; // index of this element in relation to parent
+
+    left = null;
+    middleLeft = null;
+    middleRight = null;
+    right = null;
+
+    constructor(leftKey = null, left = null, middleLeft = null, parent = null, index = null) {
+        if (leftKey != null) {
+            if (leftKey.key !== undefined) {
+                this.leftNode = leftKey;
+                leftKey.bNode = this;
+            } else {
+                this.leftNode = new Node(leftKey, 0);
+                this.leftNode.bNode = this;
+            }
+        }
+
         this.left = left;
-        this.right = right;
-        this.middle1 = middle1;
-        this.middle2 = middle2;
+        this.middleLeft = middleLeft;
+
+        if (left != null) {
+            left.parent = this;
+            left.index = 0;
+        }
+
+        if (middleLeft != null) {
+            middleLeft.parent = this;
+            middleLeft.index = 1;
+        }
+
+        this.parent = parent;
+        this.index = index;
+    }
+
+    getChild(index) {
+        switch (index) {
+            case 0:
+                return this.left;
+            case 1:
+                return this.middleLeft;
+            case 2:
+                return this.middleRight;
+            case 3:
+                return this.right;
+        }
+
+        return null;
+    }
+
+    getChildIndex(child) {
+        if (child === this.left) {
+            return 0;
+        } else if (child === this.middleLeft) {
+            return 1;
+        } else if (child === this.middleRight) {
+            return 2;
+        } else if (child === this.right) {
+            return 3;
+        }
+
+        return -1;
+    }
+
+    setChild(child, index) {
+        switch (index) {
+            case 0:
+                this.left = child;
+                break;
+            case 1:
+                this.middleLeft = child;
+                break;
+            case 2:
+                this.middleRight = child;
+                break;
+            case 3:
+                this.right = child;
+                break;
+        }
+
+        if (child != null) {
+            child.index = index;
+        }
+    }
+
+    getKey(index) {
+        switch (index) {
+            case 0:
+                return this.leftNode.key;
+            case 1:
+                return this.middleNode.key;
+            case 2:
+                return this.rightNode.key;
+        }
+
+        return null;
+    }
+
+    containsKey(key) {
+        return this.leftNode != null && key === this.leftNode.key ||
+            this.middleNode != null && key === this.middleNode.key ||
+            this.rightNode != null && key === this.rightNode.key;
+    }
+
+    getKeyIndex(key) {
+        if (key === this.leftNode.key) {
+            return 0;
+        } else if (key === this.middleNode.key) {
+            return 1;
+        } else if (key === this.rightNode.key) {
+            return 2;
+        }
+        return -1;
+    }
+
+    countKeys() {
+        if (this.rightNode != null) {
+            return 3;
+        } else if (this.middleNode != null) {
+            return 2;
+        }
+        return 1;
+    }
+
+    setKey(key, index) {
+        switch (index) {
+            case 0:
+                this.left.setKey(key);
+                break;
+            case 1:
+                this.middleLeft.setKey(key);
+                break;
+            case 2:
+                this.middleRight.setKey(key);
+                break;
+            case 3:
+                this.right.setKey(key);
+                break;
+        }
+    }
+
+    insertKey(key) {
+        if (this.leftNode == null || key < this.leftNode.key) {
+            this.rightNode = this.middleNode;
+            this.middleNode = this.leftNode;
+            this.leftNode = new Node(key, 0, this);
+        } else if (this.middleNode == null || key < this.middleNode.key) {
+            this.rightNode = this.middleNode;
+            this.middleNode = new Node(key, 1, this);
+        } else  {
+            this.rightNode = new Node(key, 2, this);
+        }
+    }
+
+    nextNode(key) {
+        if (this.leftNode == null || key < this.leftNode.key) {
+            return this.left;
+        } else if (this.middleNode == null || key < this.middleNode.key) {
+            return this.middleLeft;
+        } else if (this.rightNode == null || key < this.rightNode.key) {
+            return this.middleRight;
+        }
+
+        return this.right;
     }
 
 
@@ -24,104 +177,12 @@ class BNode {
     // 2. key > all keys in this node
     // 3. Child subtree contains only keys > key
     appendKeyAndChild(key, child) {
-        if (this.b == null) {
-            this.b = key;
-            this.middle2 = child;
+        if (this.middleNode == null) {
+            this.middleNode = new Node(key, 1);
+            this.middleRight = child;
         } else {
-            this.c = key;
+            this.rightNode = new Node(key, 2);
             this.right = child;
-        }
-    }
-
-    countKeys() {
-        if (this.c != null) {
-            return 3;
-        } else if (this.b != null) {
-            return 2;
-        }
-        return 1;
-    }
-
-    // Returns the left, middle1, middle2, or right child if the childIndex
-    // argument is 0, 1, 2, or 3, respectively.
-    // Returns null if the childIndex argument is < 0 or > 3.
-
-    getChild(childIndex) {
-        if (childIndex === 0) {
-            return this.left;
-        } else if (childIndex === 1) {
-            return this.middle1;
-        } else if (childIndex === 2) {
-            return this.middle2;
-        } else if (childIndex === 3) {
-            return this.right;
-        }
-        return null;
-    }
-
-    // Returns 0, 1, 2, or 3 if the child argument is this node's left,
-    // middle1, middle2, or right child, respectively.
-    // Returns -1 if the child argument is not a child of this node.
-
-    getChildIndex(child) {
-        if (child === this.left) {
-            return 0;
-        } else if (child === this.middle1) {
-            return 1;
-        } else if (child === this.middle2) {
-            return 2;
-        } else if (child === this.right) {
-            return 3;
-        }
-        return -1;
-    }
-
-    // Returns this node's A, B, or C key, if the keyIndex argument is
-    // 0, 1, or 2, respectively.
-    // Returns null if the keyIndex argument is < 0 or > 2.
-
-    getKey(keyIndex) {
-        if (keyIndex === 0) {
-            return this.a;
-        } else if (keyIndex === 1) {
-            return this.b;
-        } else if (keyIndex === 2) {
-            return this.c;
-        }
-        return null;
-    }
-
-    // Returns 0, 1, or 2, if the key argument is this node's A, B, or
-    // C key, respectively.
-    // Returns -1 if the key argument is not a key of this node.
-    getKeyIndex(key) {
-        if (key === this.a) {
-            return 0;
-        } else if (key === this.b) {
-            return 1;
-        } else if (key=== this.c) {
-            return 2;
-        }
-        return -1;
-    }
-
-    // Returns true if this node has the specified key, false otherwise.
-    hasKey(key) {
-        return  key === this.a || key === this.b || key=== this.c;
-    }
-
-    // Inserts a new key into the proper location in this node.
-    // Precondition: This node is a leaf and has 2 or fewer keys
-    insertKey(key) {
-        if (this.a == null || key < this.a) {
-            this.c = this.b;
-            this.b = this.a;
-            this.a = key;
-        } else if (this.b == null || key < this.b) {
-            this.c = this.b;
-            this.b = key;
-        } else {
-            this.c = key;
         }
     }
 
@@ -129,26 +190,81 @@ class BNode {
     // sets the children on either side of the inserted key.
     // Precondition: This node has 2 or fewer keys
 
-    insertKeyWithChildren(key, leftChild, rightChild) {
-        if (this.a == null || key < this.a) {
-            this.c = this.b;
-            this.b = this.a;
-            this.a = key;
-            this.right = this.middle2;
-            this.middle2 = this.middle1;
-            this.middle1 = rightChild;
-            this.left = leftChild;
-        } else if (this.b == null || key < this.b) {
-            this.c = this.b;
-            this.b = key;
-            this.right = this.middle2;
-            this.middle2 = rightChild;
-            this.middle1 = leftChild;
-        } else {
-            this.c = key;
-            this.right = rightChild;
-            this.middle2 = leftChild;
+    insertNode(node) {
+        if (this.leftNode == null || node.key < this.leftNode.key) {
+            this.rightNode = this.middleNode;
+            this.middleNode = this.leftNode;
+            this.leftNode = node;
+        } else if (this.middleNode == null || node.key < this.middleNode.key) {
+            this.rightNode = this.middleNode;
+            this.middleNode = node;
+        } else  {
+            this.rightNode = node;
         }
+    }
+
+    insertKeyWithChildren(node, leftChild, rightChild) {
+        if (node == null) {
+            return;
+        }
+
+        if (this.leftNode == null || node.key < this.leftNode.key) {
+            this.rightNode = this.middleNode;
+            this.middleNode = this.leftNode;
+            this.leftNode = node;
+
+            this.right = this.middleRight;
+            if (this.right != null) {
+                this.right.index = 3;
+            }
+
+            this.middleRight = this.middleLeft;
+            if (this.middleRight != null) {
+                this.middleRight.index = 2;
+            }
+
+            this.middleLeft = rightChild;
+            if (this.middleLeft != null) {
+                this.middleLeft.index = 1;
+            }
+
+            this.left = leftChild;
+            if (this.left != null) {
+                this.left.index = 0;
+            }
+
+        } else if (this.middleNode == null || node.key < this.middleNode.key) {
+            this.rightNode = this.middleNode;
+            this.middleNode = node;
+
+            this.right = this.middleRight;
+            if (this.right != null) {
+                this.right.index = 3;
+            }
+
+            this.middleRight = rightChild;
+            if (this.middleRight != null) {
+                this.middleRight.index = 2;
+            }
+
+            this.middleLeft = leftChild;
+            if (this.middleLeft != null) {
+                this.middleLeft.index = 1;
+            }
+        } else {
+            this.rightNode = node;
+
+            this.right = rightChild;
+            if (this.right != null) {
+                this.right.index = 3;
+            }
+            this.middleRight = leftChild;
+            if (this.middleRight != null) {
+                this.middleRight.index = 2;
+            }
+        }
+
+        node.bNode = this;
     }
 
     // Returns true if this node is a leaf, false otherwise.
@@ -156,100 +272,144 @@ class BNode {
         return this.left == null;
     }
 
-    // Returns the child of this node that would be visited next in the
-    // traversal to search for the specified key
-    nextNode(key) {
-        if (this.a == null || key < this.a) {
-            return this.left;
-        } else if (this.b == null || key < this.b) {
-            return this.middle1;
-        } else if (this.c == null || key < this.c) {
-            return this.middle2;
+    deleteNode() {
+        if (this.leftNode != null) {
+            this.leftNode.graphic.isVisible = false;
         }
-        return this.right;
-    }
 
-    // Removes key A, B, or C from this node, if keyIndex is 0, 1, or 2,
-    // respectively. Other keys and children are shifted as necessary.
-    removeKey(keyIndex) {
-        if (keyIndex === 0) {
-            this.a = this.b;
-            this.b = this.c;
-            this.c = null;
-            this.left = this.middle1;
-            this.middle1 = this.middle2;
-            this.middle2 = this.right;
-            this.right = null;
-        } else if (keyIndex === 1) {
-            this.b = this.c;
-            this.c = null;
-            this.middle2 = this.right;
-            this.right = null;
-        } else if (keyIndex === 2) {
-            this.c = null;
-            this.right = null;
+        if (this.middleNode != null) {
+            this.middleNode.graphic.isVisible = false;
+        }
+
+        if (this.rightNode != null) {
+            this.rightNode.graphic.isVisible = false;
         }
     }
 
-    // Removes and returns the rightmost child. Two possible cases exist:
-    // 1. If this node has a right child, right is set to null, and the previous right value is returned.
-    // 2. Else if this node has a middle2 child, middle2 is set to null, and the previous right value is returned.
-    // 3. Otherwise, no action is taken, and null is returned.
-    // No keys are changed in any case.
-
-    removeRightmostChild() {
-        let removed = null;
-        if (this.right != null) {
-            removed = this.right;
-            this.right = null;
-        } else if (this.middle2 != null) {
-            removed = this.middle2;
-            this.middle2 = null;
+    move() {
+        if (this.leftNode != null) {
+            this.leftNode.insideIndex = 0;
+            this.leftNode.move();
         }
-        return removed;
-    }
 
-    // Removes and returns the rightmost key. Three possible cases exist:
-    // 1. If this node has 3 keys, C is set to null and the previous C value is returned.
-    // 2. If this node has 2 keys, B is set to null and the previous B value is returned.
-    // 3. Otherwise, no action is taken and null is returned.
-    // No children are changed in any case.
-    removeRightmostKey() {
-        let removed = null;
-        if (this.c != null) {
-            removed = this.c;
-            this.c = null;
-        } else if (this.b != null) {
-            removed = this.b;
-            this.b = null;
+        if (this.middleNode != null) {
+            this.middleNode.insideIndex = 1;
+            this.middleNode.move();
         }
-        return removed;
-    }
 
-    // Sets the left, middle1, middle2, or right child if the childIndex
-    // argument is 0, 1, 2, or 3, respectively.
-    // Does nothing if the childIndex argument is < 0 or > 3.
-    setChild(child, childIndex) {
-        if (childIndex === 0) {
-            this.left = child;
-        } else if (childIndex === 1) {
-            this.middle1 = child;
-        } else if (childIndex === 2) {
-            this.middle2 = child;
-        } else if (childIndex === 3) {
-            this.right = child;
+        if (this.rightNode != null) {
+            this.rightNode.insideIndex = 2;
+            this.rightNode.move();
         }
     }
+}
 
-    // Sets this node's A, B, or C key if the keyIndex argument is 0, 1, or 2, respectively.
-    // Does nothing if the key index argument is < 0 or > 2.
-    setKey(key, keyIndex) {
-        if (keyIndex === 0) {
-            this.a = key;
-        } else if (keyIndex === 1) {
-            this.b = key;
-        } else if (keyIndex === 2) {
-            this.c = key;
+
+// Node
+class Node {
+    bNode;
+    key;
+    color;
+    graphic;
+
+    insideIndex;
+    edgeGraphic; // edge to parent
+
+    constructor(key, insideIndex, bNode = null, color = RED) {
+        this.key = key;
+        this.color = color;
+        this.insideIndex = insideIndex;
+        this.bNode = bNode;
+
+        this.graphic = new AnimatedRectangle(600, 400, this.key);
+        this.graphic.setColor(color);
+        drawable_objects.push(this.graphic);
+    }
+
+    setColor(newColor) {
+        let colorText = "black";
+        if (newColor === RED) {
+            colorText = "red";
+        }
+
+        setStatus("Recolor " + this.key + " to " + colorText);
+
+        this.color = newColor;
+        this.graphic.setColor(newColor);
+        redrawAll();
+    }
+
+    setKey(key) {
+        this.key = key;
+        this.graphic.label = key;
+    }
+
+    drawHighlighted() {
+        this.graphic.drawHighlighted();
+    }
+
+    clearHighlight() {
+        this.graphic.clearHighlight();
+    }
+
+    move() {
+        const parent = this.bNode.parent;
+
+        if (parent == null) {
+            this.graphic.isMoving = true;
+            this.graphic.movingToX = BTreeStartCoordinates[0] + this.insideIndex * 30;
+            this.graphic.movingToY = BTreeStartCoordinates[1];
+        } else {
+            let parentX = parent.leftNode.graphic.centerX;
+            let parentY = parent.leftNode.graphic.centerY;
+
+
+            if (parent.leftNode.graphic.isMoving) {
+                parentX = parent.leftNode.graphic.movingToX;
+                parentY = parent.leftNode.graphic.movingToY;
+            }
+
+            if (this.bNode.index === 0) {
+                this.graphic.movingToX = parentX + this.insideIndex * 30 - 150 * this.bNode.level;
+                this.graphic.movingToY = parentY + 80;
+            } else if (this.bNode.index === 1) {
+                this.graphic.movingToX = parentX + this.insideIndex * 30 - 50 * this.bNode.level;
+            } else if (this.bNode.index === 2) {
+                this.graphic.movingToX = parentX + this.insideIndex * 30 + 50 * this.bNode.level;
+            } else {
+                this.graphic.movingToX = parentX + this.insideIndex * 30 + 150 * this.bNode.level;
+            }
+
+
+            this.graphic.isMoving = true;
+            this.graphic.movingToY = parentY + 80;
+
+            if (this.insideIndex === 0) {
+                const head = getAttachPoint(
+                    this.graphic.movingToX, this.graphic.movingToY,
+                    parentX, parentY);
+                const tail = getAttachPoint(parentX, parentY,
+                    this.graphic.movingToX, this.graphic.movingToY);
+
+                if (this.edgeGraphic != null) {
+                    this.edgeGraphic.isMoving = true;
+                    this.edgeGraphic.moveBeginX = head[0];
+                    this.edgeGraphic.moveBeginY = head[1];
+                    this.edgeGraphic.moveEndX = tail[0];
+                    this.edgeGraphic.moveEndY = tail[1];
+                } else {
+                    this.edgeGraphic = new AnimatedLine(head[0], head[1], tail[0], tail[1]);
+                    drawable_objects.push(this.edgeGraphic);
+                }
+            }
         }
     }
+
+    deleteEdge() {
+        if (this.edgeGraphic != null) {
+            this.edgeGraphic.clear();
+            this.edgeGraphic = null;
+        }
+    }
+
 }

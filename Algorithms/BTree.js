@@ -1,84 +1,94 @@
 class BTree {
-    root;
+    root = null;
 
-    constructor() {
-        this.root = null;
+    traverse(node, level) {
+        if (node == null) {
+            return;
+        }
+
+        node.level = level;
+        node.move();
+        this.traverse(node.left, level + 1);
+        this.traverse(node.middleLeft, level + 1);
+        this.traverse(node.middleRight, level + 1);
+        this.traverse(node.right, level + 1);
     }
 
-    // Inserts a new key into this tree, provided the tree doesn't already
-    // contain the same key.
-    #insert(key, node, nodeParent) {
-        // Special case for empty tree
+    async insertNode(key, node, nodeParent) {
+        setStatus("Inserting " + key);
+
         if (this.root == null) {
-            this.root = new (key);
+            this.root = new BTreeNode(key);
+            this.root.move();
+            await moveAll();
+            await this.recolorTree(this.root);
+
             return this.root;
         }
 
         // If the node argument is null, recursively call with root
         if (node == null) {
-            return this.#insert(key, this.root, null);
+            return this.insertNode(key, this.root, null);
         }
 
         // Check for duplicate key
-        if (node.hasKey(key)) {
-            // Duplicate keys are not allowed
+        if (node.containsKey(key)) {
+            setStatus("Already contains " + key);
             return null;
         }
 
         // Preemptively split full nodes
-        if (node.c != null) {
+        if (node.rightNode != null) {
             node = this.split(node, nodeParent);
         }
 
         // If node is not a leaf, recursively insert into child subtree
         if (!node.isLeaf()) {
-            return this.#insert(key, node.nextNode(key), node);
+            return this.insertNode(key, node.nextNode(key), node);
         }
 
         // key can be inserted into leaf node
         node.insertKey(key);
+
+        this.traverse(this.root, 0);
+        await moveAll(1500);
+        await this.recolorTree(this.root);
+
         return node;
     }
 
-    insert(key) {
-        return this.#insert(key, null, null);
-    }
-
-    // Searches this tree for the specified key. If found, the node containing
-    // the key is returned. Otherwise, null is returned.
-    search(key) {
-        return this.searchRecursive(key, this.root);
-    }
-
-    // Recursive helper method for search.
-    searchRecursive(key, node) {
-        if (node == null) {
-            return null;
-        }
-
-        // Check if the node contains the key
-        if (node.hasKey(key)) {
-            return node;
-        }
-
-        // Recursively search the appropriate subtree
-        return this.searchRecursive(key, node.nextNode(key));
-    }
-
-    // Splits a full node, moving the middle key up into the parent node.
     split(node, nodeParent) {
-        const splitLeft = new BNode(node.A, node.left, node.middle1);
-        const splitRight = new BNode(node.C, node.middle2, node.right);
+        const splitLeft = new BTreeNode(node.leftNode, node.left, node.middleLeft, nodeParent);
+        const splitRight = new BTreeNode(node.rightNode, node.middleRight, node.right, nodeParent);
+
+        console.log(node.leftNode, node.middleNode, node.rightNode);
+
         if (nodeParent != null) {
-            nodeParent.insertKeyWithChildren(node.B, splitLeft, splitRight);
+            nodeParent.insertKeyWithChildren(node.middleNode, splitLeft, splitRight);
         } else {
-            // Split root
-            nodeParent = new BNode(node.B, splitLeft, splitRight);
+            nodeParent = new BTreeNode(node.middleNode, splitLeft, splitRight);
             this.root = nodeParent;
         }
 
         return nodeParent;
     }
+
+    // Recursive helper method for search.
+    searchNode(key, node) {
+        if (node == null) {
+            return null;
+        }
+
+        // Check if the node contains the key
+        if (node.containsKey(key)) {
+            return node;
+        }
+
+        // Recursively search the appropriate subtree
+        return this.searchNode(key, node.nextNode(key));
+    }
+
+    // Splits a full node, moving the middle key up into the parent node.
 
     // Fuses a parent node and two children into one node.
     // Precondition: Each of the three nodes must have one key each.
@@ -202,8 +212,7 @@ class BTree {
     }
 
     // Finds and removes the specified key from this tree.
-
-    remove(key) {
+    deleteNode(key) {
         // Special case for tree with 1 key
         if (this.root.isLeaf() && this.root.countKeys() === 1) {
             if (this.root.A === key) {
@@ -286,5 +295,31 @@ class BTree {
 
         // Replace the parent's key that was prepended to the right sibling
         nodeParent.setKey(node.removeRightmostKey(), nodeIndex);
+    }
+
+    async recolorTree(node) {
+        if (node == null) {
+            return;
+        }
+
+        if (node.leftNode != null) {
+            const newColor = await redBlackTree.searchNode(node.leftNode.key, false);
+            node.leftNode.setColor(newColor.color);
+        }
+
+        if (node.middleNode != null) {
+            const newColor = await redBlackTree.searchNode(node.middleNode.key, false);
+            node.middleNode.setColor(newColor.color);
+        }
+
+        if (node.rightNode != null) {
+            const newColor = await redBlackTree.searchNode(node.rightNode.key, false);
+            node.rightNode.setColor(newColor.color);
+        }
+
+        await this.recolorTree(node.left);
+        await this.recolorTree(node.middleLeft);
+        await this.recolorTree(node.middleRight);
+        await this.recolorTree(node.right);
     }
 }
