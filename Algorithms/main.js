@@ -69,8 +69,8 @@ async function Find() {
 
         await redBlackTree.searchNode(value);
         await delay(1000);
-        //await bTree.searchNode(value, bTree.root);
-        //await delay(1000);
+        await bTree.searchNode(value, bTree.root);
+        await delay(1000);
 
         enableAllButtons();
     }
@@ -84,8 +84,8 @@ async function Delete() {
 
         await redBlackTree.deleteNode(value);
         await delay(1000);
-        //await bTree.deleteNode(value);
-        //await delay(1000);
+        await bTree.deleteNode(value);
+        await delay(1000);
 
         enableAllButtons();
     }
@@ -104,7 +104,10 @@ async function init() {
 
     redBlackTree = new RedBlackTree();
     setStatus("Starting");
+    console.log(redBlackTree);
     bTree = new BTree();
+    console.log(bTree);
+
 }
 
 function delay(time) {

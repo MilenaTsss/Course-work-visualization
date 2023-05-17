@@ -47,7 +47,7 @@ class BTree {
             this.root = new BTreeNode(key);
             this.root.move();
             await moveAll();
-            //await this.recolorTree(this.root);
+            await this.recolorTree(this.root);
 
             return this.root;
         }
@@ -78,7 +78,7 @@ class BTree {
 
         this.traverse(this.root, 0);
         await moveAll();
-        //await this.recolorTree(this.root);
+        await this.recolorTree(this.root);
 
         return node;
     }
@@ -151,7 +151,7 @@ class BTree {
 
                     this.traverse(this.root, 0);
                     await moveAll();
-                    //await this.recolorTree(this.root);
+                    await this.recolorTree(this.root);
 
                     return true;
                 }
@@ -165,7 +165,7 @@ class BTree {
 
                 this.traverse(this.root, 0);
                 await moveAll();
-                //await this.recolorTree(this.root);
+                await this.recolorTree(this.root);
 
                 return true;
             }
