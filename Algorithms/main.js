@@ -8,11 +8,9 @@ let canvas;
 let context;
 let status;
 
-let insertField;
+let numberField;
 let insertButton;
-let deleteField;
 let deleteButton;
-let findField;
 let findButton;
 let printButton;
 let clearButton;
@@ -24,11 +22,9 @@ let BTreeStartCoordinates;
 
 
 function associateFields() {
-    insertField = document.getElementById("insert")
+    numberField = document.getElementById("input")
     insertButton = document.getElementById("insertButton")
-    deleteField = document.getElementById("delete")
     deleteButton = document.getElementById("deleteButton")
-    findField = document.getElementById("find")
     findButton = document.getElementById("findButton")
     printButton = document.getElementById("printButton")
     clearButton = document.getElementById("clearButton")
@@ -47,9 +43,9 @@ function getCanvas() {
 }
 
 async function Insert() {
-    let value = parseInt(insertField.value);
+    let value = parseInt(numberField.value);
     if (!isNaN(value)) {
-        insertField.value = "";
+        numberField.value = "";
         disableAllButtons();
 
         await redBlackTree.insertNode(value);
@@ -62,9 +58,9 @@ async function Insert() {
 }
 
 async function Find() {
-    let value = parseInt(findField.value);
+    let value = parseInt(numberField.value);
     if (!isNaN(value)) {
-        findField.value = "";
+        numberField.value = "";
         disableAllButtons();
 
         await redBlackTree.searchNode(value);
@@ -77,9 +73,9 @@ async function Find() {
 }
 
 async function Delete() {
-    let value = parseInt(deleteField.value);
+    let value = parseInt(numberField.value);
     if (!isNaN(value)) {
-        deleteField.value = "";
+        numberField.value = "";
         disableAllButtons();
 
         await redBlackTree.deleteNode(value);
