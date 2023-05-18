@@ -7,8 +7,8 @@ class RedBlackTree {
     async searchNode(key, highlighting = true) {
         let node = this.root;
         while (node != null) {
-            setStatus("Node: " + node.data);
             if (highlighting) {
+                setStatus("Node: " + node.data);
                 node.drawHighlighted();
             }
 

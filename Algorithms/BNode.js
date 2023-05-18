@@ -16,6 +16,7 @@ class BTreeNode {
             if (leftKey.key !== undefined) {
                 this.leftNode = leftKey;
                 leftKey.bNode = this;
+                leftKey.insiseIndex = 0;
             } else {
                 this.leftNode = new Node(leftKey, 0);
                 this.leftNode.bNode = this;
@@ -37,6 +38,45 @@ class BTreeNode {
 
         this.parent = parent;
         this.index = index;
+    }
+
+    fixNodes() {
+        if (this.leftNode != null) {
+            this.leftNode.insideIndex = 0;
+            this.leftNode.bNode = this;
+        }
+
+        if (this.middleNode != null) {
+            this.middleNode.insideIndex = 1;
+            this.middleNode.bNode = this;
+        }
+
+        if (this.rightNode != null) {
+            this.rightNode.insideIndex = 2;
+            this.rightNode.bNode = this;
+        }
+    }
+
+    fixChildren() {
+        if (this.left != null) {
+            this.left.parent = this;
+            this.left.index = 0;
+        }
+
+        if (this.middleLeft != null) {
+            this.middleLeft.parent = this;
+            this.middleLeft.index = 1;
+        }
+
+        if (this.middleRight != null) {
+            this.middleRight.parent = this;
+            this.middleRight.index = 2;
+        }
+
+        if (this.right != null) {
+            this.right.parent = this;
+            this.right.index = 3;
+        }
     }
 
     getChild(index) {
@@ -84,10 +124,7 @@ class BTreeNode {
                 break;
         }
 
-        if (child != null) {
-            child.index = index;
-            child.parent = this;
-        }
+        this.fixChildren();
     }
 
     getNode(index) {
@@ -157,7 +194,6 @@ class BTreeNode {
     }
 
     setNode(node, index) {
-        console.log("setting node");
         switch (index) {
             case 0:
                 this.leftNode = node;
@@ -169,7 +205,7 @@ class BTreeNode {
                 this.rightNode = node;
                 break;
         }
-        node.bNode = this;
+        this.fixNodes();
     }
 
     insertKey(key) {
@@ -206,11 +242,8 @@ class BTreeNode {
             this.right = child;
         }
 
-        if (child != null) {
-            child.parent = this;
-        }
-
-        node.bNode = this;
+        this.fixNodes();
+        this.fixChildren();
     }
 
     // Inserts a new key into the proper location in this node, and
@@ -228,6 +261,8 @@ class BTreeNode {
         } else {
             this.rightNode = node;
         }
+
+        this.fixNodes();
     }
 
     insertKeyWithChildren(node, leftChild, rightChild) {
@@ -241,57 +276,25 @@ class BTreeNode {
             this.leftNode = node;
 
             this.right = this.middleRight;
-            if (this.right != null) {
-                this.right.index = 3;
-            }
-
             this.middleRight = this.middleLeft;
-            if (this.middleRight != null) {
-                this.middleRight.index = 2;
-            }
-
             this.middleLeft = rightChild;
-            if (this.middleLeft != null) {
-                this.middleLeft.index = 1;
-            }
-
             this.left = leftChild;
-            if (this.left != null) {
-                this.left.index = 0;
-            }
-
         } else if (this.middleNode == null || node.key < this.middleNode.key) {
             this.rightNode = this.middleNode;
             this.middleNode = node;
 
             this.right = this.middleRight;
-            if (this.right != null) {
-                this.right.index = 3;
-            }
-
             this.middleRight = rightChild;
-            if (this.middleRight != null) {
-                this.middleRight.index = 2;
-            }
-
             this.middleLeft = leftChild;
-            if (this.middleLeft != null) {
-                this.middleLeft.index = 1;
-            }
         } else {
             this.rightNode = node;
 
             this.right = rightChild;
-            if (this.right != null) {
-                this.right.index = 3;
-            }
             this.middleRight = leftChild;
-            if (this.middleRight != null) {
-                this.middleRight.index = 2;
-            }
         }
 
-        node.bNode = this;
+        this.fixChildren();
+        this.fixNodes();
     }
 
     // Returns true if this node is a leaf, false otherwise.
@@ -306,11 +309,12 @@ class BTreeNode {
                 this.leftNode = this.middleNode;
                 this.middleNode = this.rightNode;
                 this.rightNode = null;
+
                 this.left = this.middleLeft;
                 this.middleLeft = this.middleRight;
                 this.middleRight = this.right;
                 if (this.right != null) {
-                    this.right.clear();
+                    this.right.delete();
                 }
                 this.right = null;
                 break;
@@ -323,7 +327,7 @@ class BTreeNode {
 
                 this.middleRight = this.right;
                 if (this.right != null) {
-                    this.right.clear();
+                    this.right.delete();
                 }
                 this.right = null;
                 break;
@@ -332,11 +336,13 @@ class BTreeNode {
                 this.rightNode.delete();
                 this.rightNode = null;
                 if (this.right != null) {
-                    this.right.clear();
+                    this.right.delete();
                 }
                 this.right = null;
             }
         }
+        this.fixChildren();
+        this.fixNodes();
     }
 
     simpleRemoveNode(index) {
@@ -366,6 +372,8 @@ class BTreeNode {
                 this.right = null;
             }
         }
+        this.fixChildren();
+        this.fixNodes();
     }
 
     removeRightmostChild() {
@@ -382,19 +390,13 @@ class BTreeNode {
     }
 
     // Removes and returns the rightmost key. Three possible cases exist:
-    // 1. If this node has 3 keys, C is set to null and
-    //    the previous C value is returned.
-    // 2. If this node has 2 keys, B is set to null and
-    //    the previous B value is returned.
-    // 3. Otherwise no action is taken and null is returned.
     // No children are changed in any case.
     removeRightmostNode() {
         let removed = null;
         if (this.rightNode != null) {
             removed = this.rightNode;
             this.rightNode = null;
-        }
-        else if (this.middleNode != null) {
+        } else if (this.middleNode != null) {
             removed = this.middleNode;
             this.middleNode = null;
         }
@@ -408,7 +410,6 @@ class BTreeNode {
         if (this.middleNode != null) {
             this.middleNode.delete();
         }
-
         if (this.rightNode != null) {
             this.rightNode.delete();
         }
@@ -439,18 +440,18 @@ class BTreeNode {
     }
 
     move() {
+        this.fixChildren();
+        this.fixNodes();
+
         if (this.leftNode != null) {
-            this.leftNode.insideIndex = 0;
             this.leftNode.move();
         }
 
         if (this.middleNode != null) {
-            this.middleNode.insideIndex = 1;
             this.middleNode.move();
         }
 
         if (this.rightNode != null) {
-            this.rightNode.insideIndex = 2;
             this.rightNode.move();
         }
     }
@@ -459,7 +460,7 @@ class BTreeNode {
 
 // Node
 class Node {
-    bNode;
+    bNode; // BTree node with 3 children
     key;
     color;
     graphic;
@@ -467,14 +468,14 @@ class Node {
     insideIndex;
     edgeGraphic; // edge to parent
 
-    constructor(key, insideIndex, bNode = null, color = RED) {
+    constructor(key, insideIndex, bNode = null) {
         this.key = key;
-        this.color = color;
+        this.color = RED;
         this.insideIndex = insideIndex;
         this.bNode = bNode;
 
         this.graphic = new AnimatedRectangle(600, 400, this.key);
-        this.graphic.setColor(color);
+        this.graphic.setColor(this.color);
         drawable_objects.push(this.graphic);
     }
 
@@ -510,9 +511,12 @@ class Node {
 
     move() {
         const parent = this.bNode.parent;
-        console.log(this, parent);
 
         if (parent == null) {
+            if (this.edgeGraphic != null) {
+                this.edgeGraphic.clear();
+            }
+
             this.graphic.isMoving = true;
             this.graphic.movingToX = BTreeStartCoordinates[0] + this.insideIndex * 30;
             this.graphic.movingToY = BTreeStartCoordinates[1];
@@ -558,6 +562,11 @@ class Node {
                     this.edgeGraphic = new AnimatedLine(head[0], head[1], tail[0], tail[1]);
                     drawable_objects.push(this.edgeGraphic);
                 }
+            } else {
+                if (this.edgeGraphic != null) {
+                    this.edgeGraphic.clear();
+                    this.edgeGraphic = null;
+                }
             }
         }
     }
@@ -572,11 +581,12 @@ class Node {
     delete() {
         if (this.graphic != null) {
             this.graphic.clear();
+            this.graphic = null;
         }
 
         if (this.edgeGraphic != null) {
             this.edgeGraphic.clear();
+            this.edgeGraphic = null;
         }
     }
-
 }
